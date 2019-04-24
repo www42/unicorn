@@ -1,0 +1,55 @@
+# Challenge 1 - Create a Kubernetes cluster with Azure Active Directory integration
+
+az account list -o table
+tenantId=$(az account list --query '[].tenantId' -o tsv)
+echo $tenantId
+
+
+ServerApplicationID='9c36894a-86fd-4d16-ad6b-3576aaedba75'
+ServerApplicationKey='KCpqL6CvzF1JmLCfgwgXT+TaAD718Yge+K9PE9PSUDA='
+ClientApplicationID='c9485e54-fd33-49a4-a387-d7882d84e0a4'
+
+az group list -o table
+rg='AKSAdvanced-RG'
+az group create --location westeurope --name $rg
+
+K8sName='k8sadv'
+
+cat .azure/aksServicePrincipal.json
+rm .azure/aksServicePrincipal.json
+
+az aks create --resource-group $rg --name $K8sName --location westeurope \
+  --aad-server-app-id $ServerApplicationID \
+  --aad-server-app-secret $ServerApplicationKey \
+  --aad-client-app-id $ClientApplicationID \
+  --aad-tenant-id $tenantId \
+  --generate-ssh-keys
+
+az aks list -o table
+
+# Als cluster admin
+az aks get-credentials --resource-group $rg --name $K8sName --admin
+kubectl get nodes
+
+# AAD role
+# Group k8sadmins
+# groupId='63e0b176-6a34-4db1-b7e4-3ab7eab32211'
+# --> clusterrolebinding-admin.yaml
+
+# upload clusterrolebinding-admin.yaml
+ll clusterrolebinding-admin.yaml
+cat clusterrolebinding-admin.yaml
+kubectl apply -f clusterrolebinding-admin.yaml
+
+# Log in with your AAD User
+# ohne --admin
+az aks get-credentials --resource-group $rg --name $K8sName
+kubectl get nodes
+
+
+# Challenge: Create a ClusterRole/Group to be able to only read pods
+
+# upload clusterrole-podreader.yaml
+# upload clusterrolebinding-podreader.yaml
+kubectl apply -f clusterrole-podreader.yaml
+kubectl apply -f clusterrolebinding-podreader.yaml

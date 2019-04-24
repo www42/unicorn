@@ -1,0 +1,50 @@
+# Challenge 3 - Learn about Kubernetes isolation strategies and network policies
+
+rg='AKSAdvanced-RG'
+
+az aks list -o table
+
+aks='k8snet'
+
+az aks get-credentials --resource-group $rg --name $aks --admin
+
+kubectl get nodes
+
+## Setup New Cluster with Azure CNI / Advanced Networking
+
+### Install Azure Network Policy Manager (NPM)
+kubectl apply -f https://raw.githubusercontent.com/Azure/acs-engine/master/parts/k8s/addons/kubernetesmasteraddons-azure-npm-daemonset.yaml
+kubectl get pods -n kube-system --selector=k8s-app=azure-npm -o wide
+
+## Samples
+
+### Deny / limit traffic to an application
+
+kubectl run nginx --image=nginx --labels=app=nginx --port 80
+kubectl get deployment
+kubectl expose deployment/nginx --type=LoadBalancer
+
+kubectl get service -w
+
+kubectl apply -f deny-all-ingress.yaml
+
+kubectl describe netpol/ingress-deny-all
+
+### Isolate namespace from other namespaces
+
+kubectl create ns teama
+kubectl create ns teamb
+kubectl run web-teama --image=nginx --labels=app=web-teama --expose --port 80 -n teama
+kubectl apply -f deny-from-other-ns.yaml
+kubectl run test-teama --rm -i -t --image=alpine -n teama -- sh
+    wget -qO- --timeout=2 http://web-teama.teama
+    exit
+kubectl run test-teamb --rm -i -t --image=alpine -n teamb -- sh
+    wget -qO- --timeout=2 http://web-teama.teama
+    exit
+
+## House-Keeping
+kubectl delete ns/teama
+kubectl delete ns/teamb
+kubectl delete service/nginx
+kubectl delete deployment/nginx

@@ -1,0 +1,47 @@
+az account list -o table
+
+az aks list -o table
+
+cat .kube/config
+kubectl config view
+kubectl config get-clusters
+kubectl config get-contexts
+kubectl config current-context
+kubectl config use-context k8sadv
+
+kubectl cluster-info
+
+kubectl get nodes
+kubectl get pods
+
+kubectl create ns ingress-samples
+kubectl get namespaces
+
+# Install Helm
+
+kubectl --namespace kube-system create serviceaccount tiller
+kubectl create clusterrolebinding tiller-cluster-rule \
+    --clusterrole=cluster-admin \
+    --serviceaccount=kube-system:tiller
+helm init --service-account tiller
+
+# Deploy Ingress Controller
+helm install stable/nginx-ingress \
+    --name clstr-ingress \
+    --set rbac.create=true,controller.scope.enabled=true,controller.scope.namespace=ingress-samples,controller.service.externalTrafficPolicy=Local \
+    --namespace ingress-samples
+
+
+kubectl get service -n ingress-samples
+
+# Deploy Sample Applications
+helm repo add azure-samples https://azure-samples.github.io/helm-charts/
+helm install azure-samples/azure-vote \
+    --set title="Winter Is Coming?" \
+    --set value1="Jon and Daenerys say YES" \
+    --set value2="Cersei says NO" \
+    --set serviceName=got-vote \
+    --set serviceType=ClusterIP \
+    --set serviceNameFront=got-vote-front \
+    --name got-vote \
+    --namespace ingress-samples
