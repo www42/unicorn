@@ -1,0 +1,23 @@
+# ACR
+az acr create --admin-enabled true --location westeurope --resource-group Donnerstag-RG --sku Basic --name donnerstag
+az acr list
+loginServer=$(az acr list --query '[].loginServer' -o tsv)
+echo $loginServer
+
+# DemoApi
+docker version
+docker image ls
+
+cd apps\aspnetcore-sidecar\DemoApi
+docker build -t sidecardemoapi:1.0 .
+docker tag sidecardemoapi:1.0 donnerstag.azurecr.io/sidecardemoapi:1.0
+
+# SidecarProxy
+cd apps\aspnetcore-sidecar\SidecarProxy
+docker build -t sidecarproxy:1.0 .
+docker tag sidecarproxy:1.0 donnerstag.azurecr.io/sidecarproxy:1.0
+
+# Push to ACR
+az acr login -n donnerstag
+docker push donnerstag.azurecr.io/sidecardemoapi:1.0
+docker push donnerstag.azurecr.io/sidecarproxy:1.0

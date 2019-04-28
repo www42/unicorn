@@ -7,7 +7,7 @@ kubectl config view
 kubectl config get-clusters
 kubectl config get-contexts
 kubectl config current-context
-kubectl config use-context k8sadv
+kubectl config use-context k8sadv-admin
 
 kubectl cluster-info
 
@@ -32,7 +32,7 @@ helm install stable/nginx-ingress \
     --namespace ingress-samples
 
 
-kubectl get service -n ingress-samples
+kubectl get service -n ingress-samples -w
 
 # Deploy Sample Applications
 helm repo add azure-samples https://azure-samples.github.io/helm-charts/
@@ -45,3 +45,6 @@ helm install azure-samples/azure-vote \
     --set serviceNameFront=got-vote-front \
     --name got-vote \
     --namespace ingress-samples
+
+kubectl get pods --namespace ingress-samples
+kubectl get deployment --namespace ingress-samples

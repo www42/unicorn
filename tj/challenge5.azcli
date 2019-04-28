@@ -1,0 +1,29 @@
+# Challenge 5 - Create a Kubernetes cluster behind an Azure Application Gateway with a Web Application Firewall (WAF)
+
+rg='Donnerstag-RG'
+location='westeurope'
+spn='Donnerstag-spn'
+your_cluster_name='Donnerstag'
+your_spn_appId='38ca1bd6-690a-4697-892c-824400983fa1'
+your_spn_password='be5bc076-7ad1-438e-bfbc-7c81957de065'
+your_spn_objectId='88bbac2d-fc83-4558-bf2b-f2de62fc7d1b'
+dns_prefix_name_of_your_choice='donnerstag'
+
+
+az group create --name $rg --location $location
+az ad sp create-for-rbac --name $spn --skip-assignment true
+
+az ad sp show --id $your_spn_appId
+
+az group deployment create \
+    --resource-group $rg \
+    --template-file akscluster.json \
+    --parameters akscluster.parameters.json \
+    --parameters aksClusterName=$your_cluster_name aksServicePrincipalAppId=$your_spn_appId aksServicePrincipalClientSecret=$your_spn_password aksServicePrincipalObjectId=$your_spn_objectId aksDnsPrefix=$dns_prefix_name_of_your_choice
+
+
+az aks get-credentials --name $your_cluster_name --resource-group $rg
+kubectl config get-contexts
+
+ll internal-ingress.yaml
+kubectl apply -f internal-ingress.yaml --validate=false
