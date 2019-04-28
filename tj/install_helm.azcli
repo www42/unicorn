@@ -1,0 +1,10 @@
+kubectl config get-contexts
+
+az aks list --query '[].{cluster:name,enableRbac:enableRbac}' -o table
+
+kubectl get namespace
+kubectl --namespace kube-system create serviceaccount tiller
+kubectl create clusterrolebinding tiller-cluster-rule \
+    --clusterrole=cluster-admin \
+    --serviceaccount=kube-system:tiller
+helm init --service-account tiller

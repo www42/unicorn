@@ -1,0 +1,68 @@
+sudo apt-get update -y
+sudo apt-get upgrade -y
+
+# Install Docker
+# --------------
+sudo apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    software-properties-common
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo apt-key fingerprint 0EBFCD88
+sudo add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+sudo apt-get update -y
+sudo apt-get install -y docker-ce
+sudo usermod -aG docker $USER
+
+# Disable Docker daemon - we'll use Docker Desktop for Windows's daemon
+sudo systemctl disable docker
+sudo service docker status
+
+# Docker Desktop for Windows should expose port 2375
+echo "export DOCKER_HOST=tcp://localhost:2375" >> ~/.bashrc && source ~/.bashrc
+docker version
+
+# Install az cli
+# --------------
+sudo apt-get install -y curl apt-transport-https lsb-release gpg
+curl -sL https://packages.microsoft.com/keys/microsoft.asc | \
+    gpg --dearmor | \
+    sudo tee /etc/apt/trusted.gpg.d/microsoft.asc.gpg > /dev/null
+
+AZ_REPO=$(lsb_release -cs)
+echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO main" | \
+    sudo tee /etc/apt/sources.list.d/azure-cli.list
+sudo apt-get update
+sudo apt-get install azure-cli
+az --version
+
+# Install kubectl
+# ---------------
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+sudo touch /etc/apt/sources.list.d/kubernetes.list 
+echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list
+sudo apt-get update
+sudo apt-get install -y kubectl
+kubectl version
+
+# Install Helm client
+# -------------------
+cd ~
+curl -O https://storage.googleapis.com/kubernetes-helm/helm-v2.13.1-linux-amd64.tar.gz
+tar -zxvf helm-v2.13.1-linux-amd64.tar.gz
+sudo mv linux-amd64/helm /usr/local/bin/helm
+helm version --client
+rm -r linux-amd64
+rm helm-v2.13.1-linux-amd64.tar.gz
+
+# Test
+az login
+az account list -o table
+az aks list
+az aks list --query '[].{fqdn:fqdn,RBAC:enableRbac}' -o table
+az aks list --query '[].{fqdn:fqdn,RBAC:enableRbac}' -o table
